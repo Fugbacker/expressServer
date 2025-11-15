@@ -1,19 +1,17 @@
-module.exports = {
+export default {
   apps: [
     {
-      name: 'expressServer',          // любое имя процесса
-      script: 'yarn',                // команда запуска
-      args: 'start',                 // аргумент yarn
+      name: 'expressServer',
+      script: 'npm',
+      args: 'run start',
       env: {
         NODE_ENV: 'production',
-        PORT: 3000,                  // порт, который будет слушать сервер
+        PORT: 3000,
       },
-      error_file: '/var/www/expressServer/log/err.log',  // ошибки
-      out_file: '/var/www/expressServer/log/out.log',    // обычный вывод
+      error_file: '/var/www/web/log/expressServer/err.log',
+      out_file: '/var/www/web/log/expressServer/out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      merge_logs: true,              // объединять все логи в один
-      autorestart: true,             // перезапуск при падении
-      watch: false                   // можно включить, если нужен автообновление при изменении файлов
+      merge_logs: true,
     },
   ],
 };
