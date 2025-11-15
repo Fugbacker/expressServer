@@ -11,7 +11,7 @@ module.exports = {
       out_file: '/var/www/web/log/gcadastr.su/out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
       merge_logs: true,
-      autorestart: true, // чтобы перезапускался при падении
+      autorestart: true,
     },
   ],
 };
