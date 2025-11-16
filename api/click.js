@@ -114,7 +114,6 @@ router.get("/", async (req, res) => {
 
         const localIp1 = getRandomLocalIp();
         const objectUrl = `https://api.roscadastres.com/pkk_files/data2.php?type=${convertedType}&id=${cadnumber}`;
-        console.log("objectUrl", objectUrl);
 
         const response1 = await axios({
           method: "GET",

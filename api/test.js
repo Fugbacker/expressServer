@@ -86,6 +86,7 @@ router.get("/", async (req, res) => {
 
     const idx = startIndex % geoportalUrls.length;
     const url = geoportalUrls[idx];
+    console.log('TESTURL', url)
     const localIp = getRandomLocalIp();
 
     try {
@@ -93,6 +94,7 @@ router.get("/", async (req, res) => {
       // test.fgishub.ru
       // =========================
       if (url.includes("test.fgishub.ru")) {
+        console.log("fgishub flow...");
         const origin = origins[Math.floor(Math.random() * origins.length)];
         const resp = await axios.get(url, {
           timeout: 4000,
@@ -115,6 +117,7 @@ router.get("/", async (req, res) => {
       // binep.ru POST
       // =========================
       if (url.includes("binep.ru/api/v3/search")) {
+        console.log("binep flow...");
         const postBody = { query: cadNum };
         const localIp2 = getRandomLocalIp();
 
@@ -138,6 +141,7 @@ router.get("/", async (req, res) => {
       // nspd.gov.ru
       // =========================
       if (url.includes("nspd.gov.ru")) {
+        console.log("nspd flow...");
         const localIp2 = getRandomLocalIp();
         const referer = makeNspdReferer();
         const resp = await axios.get(url, {
@@ -160,6 +164,7 @@ router.get("/", async (req, res) => {
       // =========================
       // Стандартный WMS запрос
       // =========================
+      console.log("standart flow...");
       const response = await axios.get(url, {
         timeout: 3000,
         headers: {
