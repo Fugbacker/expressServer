@@ -7,7 +7,7 @@ const router = express.Router();
 router.get("/", (req, res) => {
   const nets = os.networkInterfaces();
   const ipList = [];
-
+  console.log('NETS', nets)
   for (const name of Object.keys(nets)) {
     for (const net of nets[name]) {
       if (
