@@ -4,6 +4,8 @@ import axios from "axios";
 import UserAgent from "user-agents";
 import http from "http";
 import https from "https";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
 
