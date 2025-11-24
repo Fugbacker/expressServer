@@ -23,7 +23,7 @@ export const getTileUrls = (inputType, convertedType, bbox, z, x, y) => [
 
 export const getGeoportalUrls = (cadNum) => [
   // `https://mobile.rosreestr.ru/api/geoportal/v2/search/mapDemo?query=${cadNum}`,
-  `https://kadastr.notusx.ru/index.php?action=getAddresses&address=${cadNum}`
+  `https://kadastr.notusx.ru/index.php?action=getAddresses&address=${cadNum}`,
   `https://ns2.mapbaza.ru/api/geoportal/v2/search/geoportal?query=${cadNum}&thematicSearchId=1`,
   `https://nspd.gov.ru/api/geoportal/v2/search/cadastralPrice?query=${cadNum}`,
   `https://nspd.gov.ru/api/geoportal/v2/search/geoportal?query=${cadNum}`,

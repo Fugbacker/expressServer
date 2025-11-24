@@ -28,6 +28,7 @@ function getNextProxy() {
 router.get("/", async (req, res) => {
   const PROXY = getNextProxy()
   const cadNum = req.query.cadNumber;
+  console.log('🌐 cadNum:', cadNum);
   const userAgent = new UserAgent();
   const agent = new HttpsProxyAgent(PROXY, {
     rejectUnauthorized: false,
@@ -253,7 +254,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
 
   } catch (err) {
-    console.log('ОШИБКА ЗАПРОСА К НСПД', err);
+    // console.log('ОШИБКА ЗАПРОСА К НСПД', err);
      return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
   }
 }
@@ -264,7 +265,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     const data = await tryUrlsSequentially(startFrom, geoportalUrls.length);
     res.json(data || []);
   } catch (e) {
-    console.log('ОШИБКА ЗАПРОСА К НСПД', e);
+    // console.log('ОШИБКА ЗАПРОСА К НСПД', e);
     res.json([]);
   }
 });
