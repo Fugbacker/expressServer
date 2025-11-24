@@ -5,18 +5,27 @@ import UserAgent from "user-agents";
 import http from "http";
 import https from "https";
 import { HttpsProxyAgent } from 'https-proxy-agent';
+import { proxyList} from "../libs/proxy.js";
 import { getTileUrls } from "../libs/urls.js"; // поправь путь
 import dotenv from "dotenv";
 dotenv.config();
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
 const URL = process.env.NEXTAUTH_URL;
-const PROXY = process.env.PROXY;
 
+
+let proxyIndex = 0;
 let urlIndex = 0;
 const router = express.Router();
 
+function getNextProxy() {
+  const proxy = proxyList[proxyIndex % proxyList.length];
+  proxyIndex++;
+  return proxy;
+}
+
 router.get("/", async (req, res) => {
+  const PROXY = getNextProxy()
   const userAgent = new UserAgent()
   const agent = new HttpsProxyAgent(PROXY, {
     rejectUnauthorized: false,
@@ -102,14 +111,7 @@ router.get("/", async (req, res) => {
 
     try {
 
-      const ipResponse = await axios('https://api.ipify.org?format=json', {
-        httpsAgent: agent,
-        httpAgent: agent,
-        timeout: 10000
-      });
-
-      console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
-      console.log('🌐 URL:', url);
+      console.log('🌐 TILESURL:', url);
       const tileResponse = await axios.get(url, {
         responseType: 'arraybuffer',
         headers,

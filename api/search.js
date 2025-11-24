@@ -6,17 +6,27 @@ import http from "http";
 import https from "https";
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getGeoportalUrls, origins } from "../libs/urls.js"; // поправь путь
+import { proxyList} from "../libs/proxy.js";
 import dotenv from "dotenv";
 dotenv.config();
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const URL = process.env.NEXTAUTH_URL;
-const PROXY = process.env.PROXY;
+
+let proxyIndex = 0;
 let lastSuccessfulIndex = -1;
 
 const router = express.Router();
 
+function getNextProxy() {
+
+  const proxy = proxyList[proxyIndex % proxyList.length];
+  proxyIndex++;
+  return proxy;
+}
+
 router.get("/", async (req, res) => {
+  const PROXY = getNextProxy()
   const cadNum = req.query.cadNumber;
   const userAgent = new UserAgent();
   const agent = new HttpsProxyAgent(PROXY, {
@@ -73,7 +83,13 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
 
   try {
 
+      // const ipResponse = await axios('https://api.ipify.org?format=json', {
+      //   httpsAgent: agent,
+      //   httpAgent: agent,
+      //   timeout: 10000
+      // });
 
+      // console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
     // =========================
@@ -96,7 +112,14 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
         // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
         httpsAgent: agent,
         httpAgent: agent,
-      });
+      })
+      .then(({ data }) => {
+        console.log('DATA', data);
+        return data;
+
+      })
+
+
 
 
       if (resp?.data?.features && resp?.data?.features?.length > 0 || resp?.data?.data?.features && resp?.data?.data?.features?.length > 0) {
@@ -221,7 +244,8 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
 
 
 
-    if (response?.data?.features && response?.data?.features?.length !==0 || response?.data?.data?.features && response?.data?.data?.features?.length !==0|| response?.data?.properties || response?.data?.feature) {
+
+    if ((response?.data?.features && response?.data?.features?.length !==0) || response?.data?.properties || (response?.data?.data?.features && response?.data?.data?.features?.length !==0) || response?.data?.[0].length !==0) {
       lastSuccessfulIndex = idx;
       return response.data;
     }
@@ -229,6 +253,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
 
   } catch (err) {
+    console.log('ОШИБКА ЗАПРОСА К НСПД', err);
      return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
   }
 }

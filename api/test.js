@@ -6,17 +6,26 @@ import http from "http";
 import https from "https";
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getGeoportalUrls, origins } from "../libs/testUrl.js"; // поправь путь
+import { proxyList} from "../libs/proxy.js";
 import dotenv from "dotenv";
 dotenv.config();
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const URL = process.env.NEXTAUTH_URL;
-const PROXY = process.env.PROXY;
+
+let proxyIndex = 0;
 let lastSuccessfulIndex = -1;
 
 const router = express.Router();
 
+function getNextProxy() {
+  const proxy = proxyList[proxyIndex % proxyList.length];
+  proxyIndex++;
+  return proxy;
+}
+
 router.get("/", async (req, res) => {
+  const PROXY = getNextProxy()
   const cadNum = req.query.cadNumber;
   const userAgent = new UserAgent();
   const agent = new HttpsProxyAgent(PROXY, {
