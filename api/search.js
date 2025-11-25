@@ -27,8 +27,8 @@ function getNextProxy() {
 
 router.get("/", async (req, res) => {
   const PROXY = getNextProxy()
+  console.log('PROXY:', PROXY);
   const cadNum = req.query.cadNumber;
-  console.log('🌐 cadNum:', cadNum);
   const userAgent = new UserAgent();
   const agent = new HttpsProxyAgent(PROXY, {
     rejectUnauthorized: false,
@@ -83,14 +83,16 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
   const localIp = getRandomLocalIp();
 
   try {
+    //   try{
+    //     const ipResponse = await axios('https://api.ipify.org?format=json', {
+    //     httpsAgent: agent,
+    //     httpAgent: agent,
+    //     timeout: 3000
+    //   });
 
-      // const ipResponse = await axios('https://api.ipify.org?format=json', {
-      //   httpsAgent: agent,
-      //   httpAgent: agent,
-      //   timeout: 10000
-      // });
+    //   console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
+    // }catch(e){console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message)}
 
-      // console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
     // =========================
@@ -114,11 +116,10 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => {
-        console.log('DATA', data);
-        return data;
-
-      })
+      // .then(({ data }) => {
+      //   console.log('DATA', data);
+      //   return data;
+      // })
 
 
 
@@ -196,6 +197,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     if (url.includes("mobile.rosreestr.ru")) {
       console.log("mobile.rosreestr.ru...");
       const cookies = await getCookie();
+      console.log('COOKIES', cookies);
       const resp = await axios({
         method: 'GET',
         url,
@@ -246,7 +248,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
 
 
 
-    if ((response?.data?.features && response?.data?.features?.length !==0) || response?.data?.properties || (response?.data?.data?.features && response?.data?.data?.features?.length !==0) || response?.data?.[0].length !==0) {
+    if ((response?.data?.features && response?.data?.features?.length !==0) || response?.data?.properties || (response?.data?.data?.features && response?.data?.data?.features?.length !==0) || response?.data?.[0]?.length !==0) {
       lastSuccessfulIndex = idx;
       return response.data;
     }

@@ -1,5 +1,6 @@
 export const getClickUrls = (inputType, convertedType, bbox, z, x, y) => [
   // `https://mobile.rosreestr.ru/api/aeggis/v3/${inputType}/wms?REQUEST=GetFeatureInfo&QUERY_LAYERS=${inputType}&SERVICE=WMS&VERSION=1.3.0&FORMAT=image%2Fpng&STYLES=&TRANSPARENT=true&LAYERS=${inputType}&RANDOM=${Math.random()}&INFO_FORMAT=application%2Fjson&FEATURE_COUNT=10&I=91&J=508&WIDTH=512&HEIGHT=512&CRS=EPSG%3A3857&BBOX=${bbox}`,
+  `https://map.ru/api/wms?x=${x}&y=${y}&layers=${inputType}`,
   `https://pub.fgislk.gov.ru/map/nspd/api/aeggis/v3/${inputType}/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetFeatureInfo&FORMAT=image/png&TRANSPARENT=true&QUERY_LAYERS=${inputType}&LAYERS=${inputType}&INFO_FORMAT=application/json&FEATURE_COUNT=10&RANDOM=${Math.random()}&I=235&J=24&WIDTH=512&HEIGHT=512&CRS=EPSG:3857&STYLES=&BBOX=${bbox}`,
   `https://pkk.reestrn.ru/api/aeggis/v3/${inputType}/wms?REQUEST=GetFeatureInfo&QUERY_LAYERS=${inputType}&SERVICE=WMS&VERSION=1.3.0&FORMAT=image/png&STYLES=&TRANSPARENT=true&LAYERS=${inputType}&RANDOM=${Math.random()}&INFO_FORMAT=application/json&FEATURE_COUNT=10&I=172&J=34&WIDTH=512&HEIGHT=512&CRS=EPSG:3857&BBOX=${bbox}`,
   `https://binep.ru/api/aeggis/v3/${inputType}/wms?REQUEST=GetFeatureInfo&QUERY_LAYERS=${inputType}&SERVICE=WMS&VERSION=1.3.0&FORMAT=image/png&STYLES=&TRANSPARENT=true&LAYERS=${inputType}&RANDOM=${Math.random()}&INFO_FORMAT=application/json&FEATURE_COUNT=10&I=172&J=34&WIDTH=512&HEIGHT=512&CRS=EPSG:3857&BBOX=${bbox}`,
@@ -7,7 +8,7 @@ export const getClickUrls = (inputType, convertedType, bbox, z, x, y) => [
   `https://test.fgishub.ru/apipoint.php?point=/api/aeggis/v3/${inputType}/wms&REQUEST=GetFeatureInfo&QUERY_LAYERS=${inputType}&SERVICE=WMS&VERSION=1.3.0&FORMAT=image/png&STYLES=&TRANSPARENT=true&LAYERS=${inputType}&RANDOM=${Math.random()}&INFO_FORMAT=application/json&FEATURE_COUNT=10&I=1122&J=371&WIDTH=1903&HEIGHT=900&CRS=EPSG:3857&BBOX=${bbox}`,
   `https://api.roscadastres.com`,
   `https://binep.ru/api/v3/search`,
-  `https://map.ru/api/wms?x=${x}&y=${y}&layers=${inputType}`,
+
 ];
 
 export const getTileUrls = (inputType, convertedType, bbox, z, x, y) => [
@@ -22,8 +23,8 @@ export const getTileUrls = (inputType, convertedType, bbox, z, x, y) => [
 ];
 
 export const getGeoportalUrls = (cadNum) => [
-  // `https://mobile.rosreestr.ru/api/geoportal/v2/search/mapDemo?query=${cadNum}`,
-  // `https://kadastr.notusx.ru/index.php?action=getAddresses&address=${cadNum}`,
+  `https://mobile.rosreestr.ru/api/geoportal/v2/search/mapDemo?query=${cadNum}`,
+  `https://kadastr.notusx.ru/index.php?action=getAddresses&address=${cadNum}`,
   `https://ns2.mapbaza.ru/api/geoportal/v2/search/geoportal?query=${cadNum}&thematicSearchId=1`,
   `https://nspd.gov.ru/api/geoportal/v2/search/cadastralPrice?query=${cadNum}`,
   `https://nspd.gov.ru/api/geoportal/v2/search/geoportal?query=${cadNum}`,
