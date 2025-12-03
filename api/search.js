@@ -255,7 +255,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
 
   } catch (err) {
-    console.log('ОШИБКА ЗАПРОСА К НСПД', err);
+    // console.log('ОШИБКА ЗАПРОСА К НСПД', err);
      return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
   }
 }

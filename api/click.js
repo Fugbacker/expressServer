@@ -6,6 +6,7 @@ import http from "http";
 import https from "https";
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getClickUrls, origins } from "../libs/urls.js"; // поправь путь под твою структуру
+import { proxyList} from "../libs/proxy.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -24,7 +25,6 @@ function getNextProxy() {
 }
 
 router.get("/", async (req, res) => {
-  const PROXY = getNextProxy()
   const bbox = req.query.bbox;
   const inputType = req.query.type;
 
@@ -35,9 +35,6 @@ router.get("/", async (req, res) => {
   const yandexY = req.query.yandexY;
   const convertedType = inputType === '36048' ? '1' : inputType === '36049' ? '5' : inputType;
   const userAgent = new UserAgent();
-  const agent = new HttpsProxyAgent(PROXY, {
-    rejectUnauthorized: false,
-  });
 
 
   const host = req.headers.host; // например, localhost:3000 или domain.com
@@ -85,6 +82,12 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
   const idx = startIndex % clickUrls.length;
   const url = clickUrls[idx];
   console.log('CLICKURL', url)
+
+  const PROXY = getNextProxy()
+  const agent = new HttpsProxyAgent(PROXY, {
+    rejectUnauthorized: false,
+  });
+
   const localIp = getRandomLocalIp();
 
   try {
