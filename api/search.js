@@ -26,13 +26,8 @@ function getNextProxy() {
 }
 
 router.get("/", async (req, res) => {
-  const PROXY = getNextProxy()
-  console.log('PROXY:', PROXY);
   const cadNum = req.query.cadNumber;
   const userAgent = new UserAgent();
-  const agent = new HttpsProxyAgent(PROXY, {
-    rejectUnauthorized: false,
-  });
 
   const host = req.headers.host;
   const protocol = req.headers['x-forwarded-proto'] || 'http';
@@ -76,22 +71,26 @@ router.get("/", async (req, res) => {
 
 async function tryUrlsSequentially(startIndex, attemptsLeft) {
   if (attemptsLeft === 0) return null;
-
   const idx = startIndex % geoportalUrls.length;
   const url = geoportalUrls[idx];
   console.log('CLICKURL', url)
   const localIp = getRandomLocalIp();
 
+  const PROXY = getNextProxy()
+  console.log('PROXY:', PROXY);
+  const agent = new HttpsProxyAgent(PROXY, {
+   rejectUnauthorized: false,
+  });
   try {
-    //   try{
-    //     const ipResponse = await axios('https://api.ipify.org?format=json', {
-    //     httpsAgent: agent,
-    //     httpAgent: agent,
-    //     timeout: 3000
-    //   });
+      try{
+        const ipResponse = await axios('https://api.ipify.org?format=json', {
+        httpsAgent: agent,
+        httpAgent: agent,
+        timeout: 3000
+      });
 
-    //   console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
-    // }catch(e){console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message)}
+      console.log(`🔍 Проверяем IP через → IP: ${ipResponse?.data?.ip}`);
+    }catch(e){console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message)}
 
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
@@ -237,7 +236,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     const response = await axios({
       method: 'GET',
       url,
-      timeout: 3000,
+      // timeout: 3000,
       headers,
       // httpAgent: new http.Agent({ localAddress: localIp }),
       // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
@@ -256,7 +255,7 @@ async function tryUrlsSequentially(startIndex, attemptsLeft) {
     return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
 
   } catch (err) {
-    // console.log('ОШИБКА ЗАПРОСА К НСПД', err);
+    console.log('ОШИБКА ЗАПРОСА К НСПД', err);
      return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
   }
 }
