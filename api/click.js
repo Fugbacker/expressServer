@@ -1,318 +1,235 @@
-// api/click.js
 import express from "express";
 import axios from "axios";
 import UserAgent from "user-agents";
-import http from "http";
-import https from "https";
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import { getClickUrls, origins } from "../libs/urls.js"; // поправь путь под твою структуру
-import { proxyList} from "../libs/proxy.js";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { getClickUrls, origins } from "../libs/urls.js";
+import { proxyList } from "../libs/proxy.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+
 const URL = process.env.NEXTAUTH_URL;
-
-let proxyIndex = 0;
-let lastSuccessfulIndex = -1;
-
 const router = express.Router();
 
-function getNextProxy() {
-  const proxy = proxyList[proxyIndex % proxyList.length];
-  proxyIndex++;
-  return proxy;
+// перемешаем прокси для одного раунда, чтобы они не повторялись
+function getUniqueProxiesForRound(count) {
+  const shuffled = [...proxyList].sort(() => Math.random() - 0.5);
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(shuffled[i % shuffled.length]); // если прокси < URL, пойдём по кругу
+  }
+  return result;
 }
 
 router.get("/", async (req, res) => {
-  const bbox = req.query.bbox;
-  const inputType = req.query.type;
-
-  const x = req.query.x;
-  const z = req.query.zoom;
-  const y = req.query.y;
-  const yandexX = req.query.yandexX;
-  const yandexY = req.query.yandexY;
-  const convertedType = inputType === '36048' ? '1' : inputType === '36049' ? '5' : inputType;
+  const { bbox, type, x, y, zoom, yandexX, yandexY } = req.query;
+  const convertedType = type === "36048" ? "1" : type === "36049" ? "5" : type;
   const userAgent = new UserAgent();
 
+  const clickUrls = getClickUrls(type, convertedType, bbox, zoom, x, y);
+  console.log("🔗 All Click URLs:", clickUrls);
 
-  const host = req.headers.host; // например, localhost:3000 или domain.com
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
+  const proxiesForThisRound = getUniqueProxiesForRound(clickUrls.length);
+  console.log("🕸 Proxies for round:", proxiesForThisRound);
+
+  // Случайный IP (как у тебя было)
+  let cachedIps = [];
+  let ipsFetchedAt = 0;
+  const IPS_CACHE_TTL = 60 * 60 * 1000;
+  const host = req.headers.host;
+  const protocol = req.headers["x-forwarded-proto"] || "http";
   const baseUrl = `${protocol}://${host}`;
 
-  let cachedIps = [];
-  let ipsLastFetched = 0;
-  const IPS_CACHE_TTL = 60 * 60 * 1000; // 5 минут
-
-  async function getLocalIps(baseUrl) {
+  async function getLocalIps() {
     const now = Date.now();
-    if (now - ipsLastFetched > IPS_CACHE_TTL) {
+    if (now - ipsFetchedAt > IPS_CACHE_TTL) {
       const ipResponse = await axios.get(`${baseUrl}/api/ips`, { timeout: 3000 });
-      cachedIps = ipResponse.data; // вы уверены, что всегда массив
-      ipsLastFetched = now;
+      cachedIps = ipResponse.data;
+      ipsFetchedAt = now;
     }
     return cachedIps;
   }
 
   let cachedCookies = [];
-  let CookiesLastFetched = 0;
-  const COOKIE_CACHE_TTL = 60 * 60 * 1000; // 5 минут
+  let cookiesFetchedAt = 0;
+  const COOKIE_CACHE_TTL = 60 * 60 * 1000;
 
   async function getCookie() {
     const now = Date.now();
-    if (now - CookiesLastFetched > COOKIE_CACHE_TTL) {
-      const ipResponse = await axios.get(`${URL}/api/cookie`, { timeout: 3000 });
-      cachedCookies = ipResponse.data; // вы уверены, что всегда массив
-      CookiesLastFetched = now;
+    if (now - cookiesFetchedAt > COOKIE_CACHE_TTL) {
+      const cookieResponse = await axios.get(`${URL}/api/cookie`, { timeout: 3000 });
+      cachedCookies = cookieResponse.data;
+      cookiesFetchedAt = now;
     }
     return cachedCookies;
   }
 
-  const ipsList = await getLocalIps(baseUrl);
+  const ipsList = await getLocalIps();
+  const getRandomLocalIp = () => ipsList[Math.floor(Math.random() * ipsList.length)];
 
-  const clickUrls = getClickUrls(inputType, convertedType, bbox, z, x, y);
-  // 🔁 Случайный выбор IP
-  const getRandomLocalIp = () =>
-    ipsList[Math.floor(Math.random() * ipsList.length)];
+  // === формируем параллельные запросы ===
+  const requestPromises = clickUrls.map((url, i) => {
+    const proxy = proxiesForThisRound[i];
+    const agent = new HttpsProxyAgent(proxy, { rejectUnauthorized: false });
+    const localIp = getRandomLocalIp();
 
-async function tryUrlsSequentially(startIndex, attemptsLeft) {
-  if (attemptsLeft === 0) return null;
-
-  const idx = startIndex % clickUrls.length;
-  const url = clickUrls[idx];
-  console.log('CLICKURL', url)
-
-  const PROXY = getNextProxy()
-  const agent = new HttpsProxyAgent(PROXY, {
-    rejectUnauthorized: false,
-  });
-
-  const localIp = getRandomLocalIp();
-
-  try {
     // =========================
     // СЛУЧАЙ 1: roscadastres.com
     // =========================
     if (url.includes("api.roscadastres.com")) {
-      console.log("🔍 roscadastres flow...");
+      console.log(`🧩 [1] roscadastres.com flow for ${url}`);
 
       const cadUrl = `https://api.roscadastres.com/pkk_files/coordinates2.php?t=${convertedType}&lat=${yandexX}&lng=${yandexY}&lat_merc=${x}&lng_merc=${y}`;
 
-      console.log("cadUrl", cadUrl);
-
-      const response = await axios({
-        method: 'GET',
-        url: cadUrl,
+      return axios.get(cadUrl, {
         timeout: 3000,
         headers: {
-          'User-Agent': userAgent.toString(),
-          'Host': 'api.roscadastres.com'
+          "User-Agent": userAgent.toString(),
+          "Host": "api.roscadastres.com",
         },
-        // httpAgent: new http.Agent({ localAddress: localIp }),
-        // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
         httpsAgent: agent,
         httpAgent: agent,
+      }).then(async (response) => {
+        const cadnumber = response?.data?.features?.[0]?.attrs?.cn;
+        if (!cadnumber) throw new Error("No cadnumber");
+
+        const objectUrl = `https://api.roscadastres.com/pkk_files/data2.php?type=${convertedType}&id=${cadnumber}`;
+        return axios.get(objectUrl, {
+          timeout: 3000,
+          headers: {
+            "User-Agent": userAgent.toString(),
+            "Host": "api.roscadastres.com",
+          },
+          httpsAgent: agent,
+          httpAgent: agent,
+        }).then(({ data }) => data);
       });
-
-      console.log("response", response?.data);
-
-      const cadnumber = response?.data?.features?.[0]?.attrs?.cn;
-
-      if (!cadnumber) throw new Error("No cadnumber");
-
-      const localIp1 = getRandomLocalIp();
-      const objectUrl = `https://api.roscadastres.com/pkk_files/data2.php?type=${convertedType}&id=${cadnumber}`;
-      console.log("objectUrl", objectUrl);
-      const response1 = await axios({
-        method: 'GET',
-        url: objectUrl,
-        timeout: 3000,
-        headers: {
-          'User-Agent': userAgent.toString(),
-          'Host': 'api.roscadastres.com'
-        },
-        // httpAgent: new http.Agent({ localAddress: localIp1 }),
-        // httpsAgent: new https.Agent({ localAddress: localIp1, rejectUnauthorized: false }),
-        httpsAgent: agent,
-        httpAgent: agent,
-      });
-
-
-
-      if (response1?.data) {
-        lastSuccessfulIndex = idx;
-        return response1.data;
-      }
     }
 
     // =========================
     // СЛУЧАЙ 2: test.fgishub.ru
     // =========================
     if (url.includes("test.fgishub.ru")) {
-      console.log("🔍 fgishub flow...");
-
-
+      console.log(`🧩 [2] test.fgishub.ru flow for ${url}`);
       const origin = origins[Math.floor(Math.random() * origins.length)];
 
-      const resp = await axios({
-        method: 'GET',
-        url,
+      return axios.get(url, {
         timeout: 4000,
         headers: {
-          'User-Agent': userAgent.toString(),
-          'Host': 'test.fgishub.ru',
-          'Origin': origin,
-          // 'Referer': origin
+          "User-Agent": userAgent.toString(),
+          "Host": "test.fgishub.ru",
+          "Origin": origin,
         },
-        // httpAgent: new http.Agent({ localAddress: localIp }),
-        // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
         httpsAgent: agent,
         httpAgent: agent,
+      }).then(({ data }) => {
+        if (!data?.features?.length) throw new Error("No features");
+        return data;
       });
-
-      if (resp?.data?.features && resp?.data?.features?.length > 0) {
-        lastSuccessfulIndex = idx;
-        return resp.data;
-      }
     }
 
     // =========================
-    // СЛУЧАЙ 3: binep.ru — POST поиск по координатам
+    // СЛУЧАЙ 3: binep.ru POST
     // =========================
     if (url.includes("binep.ru/api/v3/search")) {
-      console.log("🔍 binep flow...");
+      console.log(`🧩 [3] binep.ru POST flow for ${url}`);
       const postBody = {
-        coord: [parseFloat(yandexY), parseFloat(yandexX)] // координаты: [lonMerc, latMerc], как и просил
+        coord: [parseFloat(yandexY), parseFloat(yandexX)],
       };
-      const localIp2 = getRandomLocalIp();
 
-      const resp = await axios({
-        method: 'POST',
-        url,
+      return axios.post(url, postBody, {
         timeout: 4000,
         headers: {
-          'User-Agent': userAgent.toString(),
-          'Host': 'binep.ru',
-          // 'Content-Type': 'application/json'
+          "User-Agent": userAgent.toString(),
+          "Host": "binep.ru",
         },
-        data: postBody,
-        // httpAgent: new http.Agent({ localAddress: localIp2 }),
-        // httpsAgent: new https.Agent({ localAddress: localIp2, rejectUnauthorized: false }),
         httpsAgent: agent,
         httpAgent: agent,
-      })
-
-      if (resp?.data?.features && resp?.data?.features?.length !==0) {
-        lastSuccessfulIndex = idx;
-        return resp.data;
-      }
+      }).then(({ data }) => {
+        if (!data?.features?.length) throw new Error("No features");
+        return data;
+      });
     }
 
     // =========================
-    //  СЛУЧАЙ 4: nspd.gov.ru
+    // СЛУЧАЙ 4: nspd.gov.ru GET
     // =========================
     if (url.includes("nspd.gov.ru")) {
-      console.log("🔍 nspd.gov.ru flow...");
+      console.log(`🧩 [4] nspd.gov.ru flow for ${url}`);
 
-      const localIp2 = getRandomLocalIp();
-      const resp = await axios({
-        method: 'GET',
-        url,
+      return axios.get(url, {
         timeout: 4000,
         headers: {
-          'User-Agent': userAgent.toString(),
-          'Host': 'nspd.gov.ru',
-          'Referer': 'https://nspd.gov.ru',
+          "User-Agent": userAgent.toString(),
+          "Host": "nspd.gov.ru",
+          "Referer": "https://nspd.gov.ru",
         },
-        // httpAgent: new http.Agent({ localAddress: localIp2 }),
-        // httpsAgent: new https.Agent({ localAddress: localIp2, rejectUnauthorized: false }),
         httpsAgent: agent,
         httpAgent: agent,
-      })
-
-      if (resp?.data?.features && resp?.data?.features?.length !==0 || resp?.data?.data?.features && resp?.data?.data?.features?.length !==0) {
-        lastSuccessfulIndex = idx;
-        return resp.data;
-      }
+      }).then(({ data }) => {
+        const hasFeatures = data?.features?.length || data?.data?.features?.length;
+        if (!hasFeatures) throw new Error("No features");
+        return data;
+      });
     }
 
     // =========================
-    // ✅ СЛУЧАЙ 5: mobile.rosreestr.ru
+    // СЛУЧАЙ 5: mobile.rosreestr.ru GET + Cookie
     // =========================
     if (url.includes("mobile.rosreestr.ru")) {
-      console.log("mobile.rosreestr.ru...");
-      const cookies = await getCookie();
-      const resp = await axios({
-        method: 'GET',
-        url,
-        timeout: 4000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
-          'Host': 'mobile.rosreestr.ru',
-          'Cookie': cookies,
-          'Referer': 'https://mobile.rosreestr.ru'
-        },
-        // httpAgent: new http.Agent({ localAddress: localIp }),
-        // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
-        httpsAgent: agent,
-        httpAgent: agent,
-      })
-      .then(({ data }) => {
-        console.log("data", data);
-        return data;
-       })
+      console.log(`🧩 [5] mobile.rosreestr.ru flow for ${url}`);
 
-       if (resp?.data?.features && resp?.data?.features?.length !==0 || resp?.data?.data?.features && resp?.data?.data?.features?.length !==0) {
-        lastSuccessfulIndex = idx;
-        return resp.data;
-      }
+      return getCookie().then((cookies) => {
+        return axios.get(url, {
+          timeout: 4000,
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
+            "Host": "mobile.rosreestr.ru",
+            "Cookie": cookies,
+            "Referer": "https://mobile.rosreestr.ru",
+          },
+          httpsAgent: agent,
+          httpAgent: agent,
+        }).then(({ data }) => {
+          const hasFeatures = data?.features?.length || data?.data?.features?.length;
+          if (!hasFeatures) throw new Error("No features");
+          return data;
+        });
+      });
     }
 
     // =========================
-    // ✅ Стандартный WMS запрос
+    // Стандартный WMS GET
     // =========================
-    console.log("standart flow...");
-    const headers = {
-      'User-Agent': userAgent.toString(),
-    };
+    console.log(`🧩 [WMS] Standard GET/WMS flow for ${url}`);
 
-    if (url.includes('pub.fgislk.gov.ru')) {
-      headers['Host'] = 'pub.fgislk.gov.ru';
-      headers['Referer'] = 'https://pub.fgislk.gov.ru/map';
+    const headers = { "User-Agent": userAgent.toString() };
+    if (url.includes("pub.fgislk.gov.ru")) {
+      headers["Host"] = "pub.fgislk.gov.ru";
+      headers["Referer"] = "https://pub.fgislk.gov.ru/map";
     }
-    const response = await axios({
-      method: 'GET',
-      url,
+
+    return axios.get(url, {
       timeout: 3000,
       headers,
-      // httpAgent: new http.Agent({ localAddress: localIp }),
-      // httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
       httpsAgent: agent,
       httpAgent: agent,
+    }).then(({ data }) => {
+      if (!data?.features?.length) throw new Error("No features");
+      return data;
     });
+  });
 
-    if (response?.data?.features && response?.data?.features?.length !==0) {
-      lastSuccessfulIndex = idx;
-      return response.data;
-    }
-
-    return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
-
-  } catch (err) {
-    console.log('ОШИБКА ЗАПРОСА К НСПД!!!', err);
-    return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
-  }
-}
-
-  const startFrom = (lastSuccessfulIndex + 1) % clickUrls.length;
-
+  // 🔥 ждём самый быстрый SUCCESS из параллельных запросов
   try {
-    const data = await tryUrlsSequentially(startFrom, clickUrls.length);
-    res.json(data || 'error');
-  } catch (e) {
-    console.log('ОШИБКА ЗАПРОСА К НСПД', e);
-    res.json('error');
+    const fastestData = await Promise.any(requestPromises);
+    console.log("⚡ Fastest Success Response received");
+    res.json(fastestData);
+  } catch (err) {
+    console.log("❌ All URLs failed:", err?.message);
+    res.json([]);
   }
 });
 
