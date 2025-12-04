@@ -26,7 +26,6 @@ function getNextProxy() {
 
 router.get("/", async (req, res) => {
   const cadNum = req.query.cadNumber;
-  console.log('cadNum', cadNum);
   const userAgent = new UserAgent();
 
   const host = req.headers.host;
@@ -71,21 +70,21 @@ router.get("/", async (req, res) => {
   // === Форма‐мейкер для 5 случаев ===
   const requests = geoportalUrls.map((url) => {
     const PROXY = getNextProxy();
-    console.log('PROXY:', PROXY, '→', url);
+    // console.log('PROXY:', PROXY, '→', url);
 
     const agent = new HttpsProxyAgent(PROXY, { rejectUnauthorized: false });
     const localIp = getRandomLocalIp();
 
     // IP проверка (оставляем как у тебя было)
-    const checkIpPromise = axios('https://api.ipify.org?format=json', {
-      httpsAgent: agent,
-      httpAgent: agent,
-      timeout: 3000
-    })
-    .then(ipResponse => {
-      console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
-    })
-    .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
+    // const checkIpPromise = axios('https://api.ipify.org?format=json', {
+    //   httpsAgent: agent,
+    //   httpAgent: agent,
+    //   timeout: 3000
+    // })
+    // .then(ipResponse => {
+    //   console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
+    // })
+    // .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
 
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
@@ -102,7 +101,7 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => data);
+      .then(({ data }) => ({ url, data }))
     }
 
     // =========================
@@ -119,7 +118,7 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => data);
+      .then(({ data }) => ({ url, data }))
     }
 
     // =========================
@@ -136,7 +135,7 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => data);
+      .then(({ data }) => ({ url, data }))
     }
 
     // =========================
@@ -155,7 +154,7 @@ router.get("/", async (req, res) => {
           httpsAgent: agent,
           httpAgent: agent,
         })
-        .then(({ data }) => data);
+        .then(({ data }) => ({ url, data }))
       });
     }
 
@@ -175,19 +174,25 @@ router.get("/", async (req, res) => {
       httpsAgent: agent,
       httpAgent: agent,
     })
-    .then(({ data }) => data);
+    .then(({ data }) => {
+      if (typeof data === "string" && data.trim() === "") {
+        throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
+      }
+      return { url, data };
+    })
   });
 
   // 🔥 Ждём первый успешный из всех параллельных запросов
-  Promise.any(requests)
-    .then(result => {
-      console.log('✅ FASTEST SUCCESS URL RESPONSE');
-      res.json(result || []);
-    })
-    .catch(error => {
-      console.log('❌ All URLs failed', error);
-      res.json([]);
-    });
+    Promise.any(requests)
+      .then(result => {
+        console.log("⚡ Fastest URL:", result.url);
+        // console.log("🔍 Data:", result.data.length);
+        res.json(result.data || []);
+      })
+      .catch(err => {
+        console.log("❌ Fastest returned empty or all failed:", err.message);
+        res.json([]); // возвращаем []
+      });
 
 });
 
