@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const userAgent = new UserAgent();
-  const cadNum = req.query.cadNum;
+  const cadNum = req.query.cadNumber;
 
   // базовый URL сервера для получения списка IP
   const host = req.headers.host; // localhost:3000 или IP:3000
