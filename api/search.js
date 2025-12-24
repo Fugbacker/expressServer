@@ -175,7 +175,7 @@ router.get("/", async (req, res) => {
       httpAgent: agent,
     })
     .then(({ data }) => {
-      if (typeof data === "string" && data.trim() === "") {
+      if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
         throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
       }
       return { url, data };
@@ -186,7 +186,6 @@ router.get("/", async (req, res) => {
     Promise.any(requests)
       .then(result => {
         console.log("⚡ Fastest URL:", result.url);
-        // console.log("🔍 Data:", result.data.length);
         res.json(result.data || []);
       })
       .catch(err => {
