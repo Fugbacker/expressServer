@@ -125,6 +125,7 @@ router.get("/", async (req, res) => {
     //  СЛУЧАЙ 3: nspd.gov.ru GET
     // =========================
     if (url.includes("nspd.gov.ru/api/geoportal") || url.includes("nspd.gov.ru/api/geoportal")) {
+      console.log('NSPD START');
       return axios.get(url, {
         timeout: 4000,
         headers: {
@@ -136,6 +137,14 @@ router.get("/", async (req, res) => {
         httpAgent: agent,
       })
       .then(({ data }) => ({ url, data }))
+      // .then(({ data }) => {
+      //   console.log('DATA', data);
+      //   return { url, data }
+      // })
+      // .catch(e => {
+      //   console.log('NSPD ERROR', e?.response?.status || e.message);
+      //   return { url, data: [] }
+      // });
     }
 
     // =========================
@@ -175,6 +184,7 @@ router.get("/", async (req, res) => {
       httpAgent: agent,
     })
     .then(({ data }) => {
+      console.log('data', data);
       if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
         throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
       }
