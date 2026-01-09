@@ -70,7 +70,7 @@ router.get("/", async (req, res) => {
   // === Форма‐мейкер для 5 случаев ===
   const requests = geoportalUrls.map((url) => {
     const PROXY = getNextProxy();
-    // console.log('PROXY:', PROXY, '→', url);
+    console.log('PROXY:', PROXY, '→', url);
 
     const agent = new HttpsProxyAgent(PROXY, { rejectUnauthorized: false });
     const localIp = getRandomLocalIp();
@@ -184,7 +184,7 @@ router.get("/", async (req, res) => {
       httpAgent: agent,
     })
     .then(({ data }) => {
-      console.log('data', data);
+
       if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
         throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
       }
