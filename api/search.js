@@ -8,14 +8,13 @@ import { HttpsProxyAgent } from 'https-proxy-agent';
 import { getGeoportalUrls, origins } from "../libs/urls.js";
 import { proxyList } from "../libs/proxy.js";
 import dotenv from "dotenv";
+
 dotenv.config();
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 const URL = process.env.NEXTAUTH_URL;
 
 let proxyIndex = 0;
-let lastSuccessfulIndex = -1;
-
 const router = express.Router();
 
 function getNextProxy() {
@@ -27,25 +26,6 @@ function getNextProxy() {
 router.get("/", async (req, res) => {
   const cadNum = req.query.cadNumber;
   const userAgent = new UserAgent();
-
-  const host = req.headers.host;
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const baseUrl = `${protocol}://${host}`;
-
-  // === Кэширование IP-адресов ===
-  let cachedIps = [];
-  let ipsLastFetched = 0;
-  const IPS_CACHE_TTL = 60 * 60 * 1000;
-
-  async function getLocalIps(baseUrl) {
-    const now = Date.now();
-    if (now - ipsLastFetched > IPS_CACHE_TTL) {
-      const ipResponse = await axios.get(`${baseUrl}/api/ips`, { timeout: 3000 });
-      cachedIps = ipResponse.data;
-      ipsLastFetched = now;
-    }
-    return cachedIps;
-  }
 
   let cachedCookies = [];
   let CookiesLastFetched = 0;
@@ -61,30 +41,24 @@ router.get("/", async (req, res) => {
     return cachedIps;
   }
 
-  const ipsList = await getLocalIps(baseUrl);
   const geoportalUrls = getGeoportalUrls(cadNum);
 
-  const getRandomLocalIp = () =>
-    ipsList[Math.floor(Math.random() * ipsList.length)];
 
   // === Форма‐мейкер для 5 случаев ===
   const requests = geoportalUrls.map((url) => {
     const PROXY = getNextProxy();
     console.log('PROXY:', PROXY, '→', url);
-
     const agent = new HttpsProxyAgent(PROXY, { rejectUnauthorized: false });
-    const localIp = getRandomLocalIp();
-
     // IP проверка (оставляем как у тебя было)
-    // const checkIpPromise = axios('https://api.ipify.org?format=json', {
-    //   httpsAgent: agent,
-    //   httpAgent: agent,
-    //   timeout: 3000
-    // })
-    // .then(ipResponse => {
-    //   console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
-    // })
-    // .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
+    const checkIpPromise = axios('https://api.ipify.org?format=json', {
+      httpsAgent: agent,
+      httpAgent: agent,
+      timeout: 3000
+    })
+    .then(ipResponse => {
+      console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
+    })
+    .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
 
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
@@ -137,14 +111,6 @@ router.get("/", async (req, res) => {
         httpAgent: agent,
       })
       .then(({ data }) => ({ url, data }))
-      // .then(({ data }) => {
-      //   console.log('DATA', data);
-      //   return { url, data }
-      // })
-      // .catch(e => {
-      //   console.log('NSPD ERROR', e?.response?.status || e.message);
-      //   return { url, data: [] }
-      // });
     }
 
     // =========================
