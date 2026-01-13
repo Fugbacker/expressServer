@@ -50,15 +50,15 @@ router.get("/", async (req, res) => {
     console.log('PROXY:', PROXY, '→', url);
     const agent = new HttpsProxyAgent(PROXY, { rejectUnauthorized: false });
     // IP проверка (оставляем как у тебя было)
-    const checkIpPromise = axios('https://api.ipify.org?format=json', {
-      httpsAgent: agent,
-      httpAgent: agent,
-      timeout: 3000
-    })
-    .then(ipResponse => {
-      console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
-    })
-    .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
+    // const checkIpPromise = axios('https://api.ipify.org?format=json', {
+    //   httpsAgent: agent,
+    //   httpAgent: agent,
+    //   timeout: 3000
+    // })
+    // .then(ipResponse => {
+    //   console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
+    // })
+    // .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
 
     // =========================
     //  СЛУЧАЙ 1: test.fgishub.ru
@@ -75,7 +75,12 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => ({ url, data }))
+      .then(({ data }) => {
+        if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
+          throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
+        }
+        return { url, data };
+      })
     }
 
     // =========================
@@ -92,7 +97,12 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => ({ url, data }))
+      .then(({ data }) => {
+        if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
+          throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
+        }
+        return { url, data };
+      })
     }
 
     // =========================
@@ -110,7 +120,12 @@ router.get("/", async (req, res) => {
         httpsAgent: agent,
         httpAgent: agent,
       })
-      .then(({ data }) => ({ url, data }))
+      .then(({ data }) => {
+        if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
+          throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
+        }
+        return { url, data };
+      })
     }
 
     // =========================
@@ -129,7 +144,12 @@ router.get("/", async (req, res) => {
           httpsAgent: agent,
           httpAgent: agent,
         })
-        .then(({ data }) => ({ url, data }))
+      .then(({ data }) => {
+          if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
+            throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
+          }
+          return { url, data };
+        })
       });
     }
 
@@ -150,7 +170,6 @@ router.get("/", async (req, res) => {
       httpAgent: agent,
     })
     .then(({ data }) => {
-
       if (typeof data === "string" && data.trim() === "" || data?.features?.length === 0) {
         throw new Error("Empty response"); // считаем как ошибку → Promise.any перейдёт к следующему
       }
