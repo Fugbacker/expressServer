@@ -172,7 +172,7 @@ router.get("/", async (req, res) => {
 
     return axios
       .get(url, {
-        // timeout: 6000,
+        timeout: 6000,
         headers,
         httpsAgent: agent,
         httpAgent: agent,
