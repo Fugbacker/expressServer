@@ -2,8 +2,8 @@
 import express from "express";
 import axios from "axios";
 import UserAgent from "user-agents";
-import http from "http";
-import https from "https";
+import { HttpsProxyAgent } from "https-proxy-agent";
+import { proxyList } from "../libs/proxy.js";
 import { getHistoryUrls } from "../libs/urls.js"; // поправь путь под твою структуру
 
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
@@ -12,25 +12,18 @@ let lastSuccessfulIndex = -1;
 
 const router = express.Router();
 
+let proxyIndex = 0;
+
+function getNextProxy() {
+  const proxy = proxyList[proxyIndex % proxyList.length];
+  proxyIndex++;
+  return proxy;
+}
+
 router.get("/", async (req, res) => {
   const userAgent = new UserAgent();
   const cadNum = req.query.cadNumber;
-
-  // базовый URL сервера для получения списка IP
-  const host = req.headers.host; // localhost:3000 или IP:3000
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const baseUrl = `${protocol}://${host}`;
-
-  let ipsList = [];
-  try {
-    const response = await axios.get(`${baseUrl}/api/ips`, { timeout: 3000 });
-    ipsList = response.data;
-  } catch (err) {
-    console.error("Ошибка получения локальных IP:", err.message);
-  }
-
-  const getRandomLocalIp = () => ipsList[Math.floor(Math.random() * ipsList.length)];
-  const localIp = getRandomLocalIp();
+  console.log("🔎 Поиск по кадастровому номеру:", cadNum) ;
 
   const historyUrls = getHistoryUrls(cadNum);
 
@@ -41,19 +34,19 @@ router.get("/", async (req, res) => {
     const randomIdx = Math.floor(Math.random() * historyUrls.length);
     const url = historyUrls[randomIdx];
 
-    console.log('IP запроса HISTORY', localIp, 'URL', url);
-
     try {
       const isNspd = url.startsWith('https://nspd.gov.ru');
+      const proxy = getNextProxy();
+      const agent = new HttpsProxyAgent(proxy, { rejectUnauthorized: false });
 
       const response = await axios.get(url, {
-        timeout: 3000,
+        timeout: 6000,
         headers: {
           'User-Agent': userAgent.toString(),
           ...(isNspd ? { Host: 'nspd.gov.ru' } : {}),
         },
-        httpAgent: new http.Agent({ localAddress: localIp }),
-        httpsAgent: new https.Agent({ localAddress: localIp, rejectUnauthorized: false }),
+        httpsAgent: agent,
+        httpAgent: agent,
       });
 
       if (response?.data) {
@@ -64,7 +57,7 @@ router.get("/", async (req, res) => {
       return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
 
     } catch (e) {
-      console.error(`Ошибка при запросе HISTORY ${url}: IP ${localIp}`, e.message);
+      console.error(`Ошибка при запросе HISTORY ${url}`, e.message);
       return tryUrlsSequentially(idx + 1, attemptsLeft - 1);
     }
   }

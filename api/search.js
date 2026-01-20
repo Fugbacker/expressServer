@@ -64,15 +64,15 @@ router.get("/", async (req, res) => {
     console.log("🧭 Proxy:", proxy, "→", url);
 
     // IP проверка (оставляем как у тебя было)
-    const checkIpPromise = axios('https://api.ipify.org?format=json', {
-      httpsAgent: agent,
-      httpAgent: agent,
-      timeout: 3000
-    })
-    .then(ipResponse => {
-      console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
-    })
-    .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
+    // const checkIpPromise = axios('https://api.ipify.org?format=json', {
+    //   httpsAgent: agent,
+    //   httpAgent: agent,
+    //   timeout: 3000
+    // })
+    // .then(ipResponse => {
+    //   console.log(`🔍 Проверяем IP через прокси → IP: ${ipResponse?.data?.ip}`);
+    // })
+    // .catch(e => console.log('ОШИБКА ПРОВЕРКИ АЙПИ', e?.response?.status || e.message));
     /* ============================
        CASE 1 — test.fgishub.ru
     ============================ */

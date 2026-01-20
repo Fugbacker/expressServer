@@ -24,32 +24,13 @@ function getNextProxy() {
 }
 
 router.get("/", async (req, res) => {
-  const cadNum = req.query.cadNumber;
   const userAgent = new UserAgent();
 
   const bbox = req.query.bbox;
   const type = req.query.type;
-  const host = req.headers.host;
   const x = req.query.x;
   const z = req.query.zoom;
   const y = req.query.y;
-  const protocol = req.headers['x-forwarded-proto'] || 'http';
-  const baseUrl = `${protocol}://${host}`;
-
-  // === Кэш IP ===
-  let cachedIps = [];
-  let ipsLastFetched = 0;
-  const IPS_CACHE_TTL = 60 * 60 * 1000;
-
-  async function getLocalIps(baseUrl) {
-    const now = Date.now();
-    if (now - ipsLastFetched > IPS_CACHE_TTL) {
-      const ipResponse = await axios.get(`${baseUrl}/api/ips`, { timeout: 3000 });
-      cachedIps = ipResponse.data;
-      ipsLastFetched = now;
-    }
-    return cachedIps;
-  }
 
   // === Кэш cookies ===
   let cachedCookies = [];
@@ -67,14 +48,15 @@ router.get("/", async (req, res) => {
   }
 
   const cookies = await getCookie();
-  const ipsList = await getLocalIps(baseUrl);
-  const getRandomLocalIp = () => ipsList[Math.floor(Math.random() * ipsList.length)];
+  // const ipsList = await getLocalIps(baseUrl);
+  // const getRandomLocalIp = () => ipsList[Math.floor(Math.random() * ipsList.length)];
 
   const mode = type === '36048' ? 'ZU' : type === '36049' ? 'BULDS' : 'ZU';
   const urlTemplates = getTileUrls(type, mode, bbox, z, x, y);
 
   // === ПАРАЛЛЕЛЬНЫЙ ФЛОУ С ОТМЕНОЙ ===
   const controllers = [];
+
   const requests = urlTemplates.map((url) => {
     const PROXY = getNextProxy();
     // console.log('PROXY:', PROXY);
