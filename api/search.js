@@ -81,7 +81,7 @@ router.get("/", async (req, res) => {
 
       return axios
         .get(url, {
-          timeout: 6000,
+          timeout: 10000,
           headers: {
             "User-Agent": userAgent.toString(),
             Host: "test.fgishub.ru",
@@ -103,7 +103,7 @@ router.get("/", async (req, res) => {
           url,
           { query: cadNum },
           {
-            timeout: 6000,
+            timeout: 10000,
             headers: {
               "User-Agent": userAgent.toString(),
               Host: "binep.ru",
@@ -122,7 +122,7 @@ router.get("/", async (req, res) => {
     if (url.includes("nspd.gov.ru/api/geoportal")) {
       return axios
         .get(url, {
-          timeout: 6000,
+          // timeout: 10000,
           headers: {
             "User-Agent": userAgent.toString(),
             Host: "nspd.gov.ru",
@@ -142,7 +142,7 @@ router.get("/", async (req, res) => {
       return getCookie().then((cookies) => {
         return axios
           .get(url, {
-            timeout: 6000,
+            timeout: 10000,
             headers: {
               "User-Agent":
                 "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36",
@@ -172,7 +172,7 @@ router.get("/", async (req, res) => {
 
     return axios
       .get(url, {
-        timeout: 6000,
+        timeout: 10000,
         headers,
         httpsAgent: agent,
         httpAgent: agent,
