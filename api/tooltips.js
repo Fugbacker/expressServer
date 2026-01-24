@@ -16,6 +16,9 @@ export const proxyList = [
   'http://947714242:hTaKYVjb4cRKuqxn0biJ_country-RU@176.9.113.112:48004',  //25GB
   'http://947714242:hTaKYVjb4cRKuqxn0biJ_country-RU@176.9.113.112:48004',
   'http://947714242:hTaKYVjb4cRKuqxn0biJ_country-RU@176.9.113.112:48004',
+  'http://947714242:UJPSx1N7YXaTNV2MVZaV_country-RU@176.9.113.112:48000',
+  'http://947714242:UJPSx1N7YXaTNV2MVZaV_country-RU@176.9.113.112:48000',
+  'http://947714242:UJPSx1N7YXaTNV2MVZaV_country-RU@176.9.113.112:48000',
 ];
 
 function getNextProxy() {
