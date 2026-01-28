@@ -12,6 +12,7 @@ import testRouter from "./api/test.js";
 import tilesRouter from "./api/tiles.js";
 import tooltipsRouter from "./api/tooltips.js";
 import mongoRouter from "./api/mongo.js";
+import searchAdress from "./api/searchAdress.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/click", clickRouter);
+app.use("/api/searchAdress", searchAdress);
 app.use("/api/history", historyRouter);
 app.use("/api/ips", ipsRouter);
 app.use("/api/search", searchRouter);

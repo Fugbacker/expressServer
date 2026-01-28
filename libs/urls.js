@@ -43,6 +43,22 @@ export const getGeoportalUrls = (cadNum) => [
   // `https://pkk.reestrn.ru/api/geoportal/v2/search/geoportal?query=${cadNum}`,
 ];
 
+export const getSearchAdressUrls = (cadNum) => [
+  `https://nspd.gov.ru/api/geoportal/v2/search/assistantSurveyor?query=${cadNum}`, //нет
+  `https://ns2.mapbaza.ru/api/geoportal/v2/search/geoportal?query=${cadNum}&thematicSearchId=1`,
+  `https://nspd.gov.ru/api/geoportal/v2/search/cadastralPrice?query=${cadNum}`, //нет
+  `https://nspd.gov.ru/api/geoportal/v2/search/geoportal?query=${cadNum}`, //нет
+  `https://mobile.rosreestr.ru/api/geoportal/v2/search/mapDemo?query=${cadNum}`, //нет
+  `https://test.fgishub.ru/api.php?query=${cadNum}`,
+  'https://binep.ru/api/v3/search',
+  `https://apipkk.ru/api/geoportal/v2/search/geoportal?query=${cadNum}`,
+  `https://map.ru/api/kad/suggestions?query=${cadNum}`,
+  `https://pub.fgislk.gov.ru/map/nspd/api/geoportal/v2/search/geoportal?query=${cadNum}`,
+  `https://map.fgislk.gov.ru/map/nspd/api/geoportal/v2/search/geoportal?query=${cadNum}`,
+  `https://fgistp.economy.gov.ru/controllers/router.php?path=api/geoportal/v2/search/geoportal&controller=nspd&op=proxy&function=wms&REQUEST=thematicSearchId=1&query=${cadNum}`, //нет
+  `https://nspd.gov.ru/api/data-fund/v1/geom?kind=land&cadNumber=${cadNum}`, //нет
+];
+
 export const getHistoryUrls = (cadNum) => [
   `https://apipkk.ru/api/data-fund/v2/cadastral-history-diagram?cadNumber=${cadNum}`,
   `https://nspd.gov.ru/api/data-fund/v2/cadastral-history-diagram?cadNumber=${cadNum}`,
